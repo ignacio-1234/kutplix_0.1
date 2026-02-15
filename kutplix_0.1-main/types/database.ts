@@ -61,16 +61,3 @@ export type RegisterData = {
     companyName?: string
     role?: UserRole
 }
-
-export type Plan = {
-    id: string
-    name: string
-    description: string
-    monthly_projects: number
-    max_revisions: number
-    price: number
-    features: any
-    is_active: boolean
-    created_at: string
-    updated_at: string
-}

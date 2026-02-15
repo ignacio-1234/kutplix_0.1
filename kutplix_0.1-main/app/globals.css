@@ -14,8 +14,7 @@
   }
 
   body {
-    @apply bg-white;
-    color: #333333;
+    @apply bg-gray-50 text-gray-900;
   }
 }
 
