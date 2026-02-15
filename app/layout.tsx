@@ -1,14 +1,15 @@
 import type { Metadata } from 'next'
 import { DM_Sans, Sora } from 'next/font/google'
 import './globals.css'
+import { AuthProvider } from '@/lib/auth-context'
 
-const dmSans = DM_Sans({ 
+const dmSans = DM_Sans({
   subsets: ['latin'],
   variable: '--font-dm-sans',
   display: 'swap',
 })
 
-const sora = Sora({ 
+const sora = Sora({
   subsets: ['latin'],
   variable: '--font-sora',
   display: 'swap',
@@ -26,7 +27,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${dmSans.variable} ${sora.variable}`}>
-      <body className={dmSans.className}>{children}</body>
+      <body className={dmSans.className}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   )
 }

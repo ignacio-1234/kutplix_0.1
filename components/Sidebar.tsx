@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
+import { useAuth } from '@/lib/auth-context'
 
 interface NavItem {
   icon: string
@@ -58,6 +59,8 @@ const roleLabels = {
 export default function Sidebar({ role, userName, userRole, userAvatar }: SidebarProps) {
   const pathname = usePathname()
   const navItems = navItemsByRole[role]
+  const [showMenu, setShowMenu] = useState(false)
+  const { logout } = useAuth()
 
   const getInitials = (name: string) => {
     return name
@@ -66,6 +69,10 @@ export default function Sidebar({ role, userName, userRole, userAvatar }: Sideba
       .join('')
       .toUpperCase()
       .slice(0, 2)
+  }
+
+  const handleLogout = async () => {
+    await logout()
   }
 
   return (
@@ -84,16 +91,15 @@ export default function Sidebar({ role, userName, userRole, userAvatar }: Sideba
       <nav className="flex-1 p-4 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href
-          
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-all ${
-                isActive
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-all ${isActive
                   ? 'bg-gradient-to-br from-primary to-primary-dark text-white'
                   : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`}
+                }`}
             >
               <span className="text-xl w-6 text-center">{item.icon}</span>
               <span className="text-sm font-medium">{item.label}</span>
@@ -103,8 +109,11 @@ export default function Sidebar({ role, userName, userRole, userAvatar }: Sideba
       </nav>
 
       {/* User Section */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 cursor-pointer transition-all">
+      <div className="p-4 border-t border-gray-200 relative">
+        <div
+          className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 cursor-pointer transition-all"
+          onClick={() => setShowMenu(!showMenu)}
+        >
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-semibold">
             {userAvatar || getInitials(userName)}
           </div>
@@ -114,6 +123,31 @@ export default function Sidebar({ role, userName, userRole, userAvatar }: Sideba
           </div>
           <span className="text-lg">⋯</span>
         </div>
+
+        {/* Dropdown Menu */}
+        {showMenu && (
+          <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+            <button
+              onClick={() => {
+                setShowMenu(false)
+              }}
+              className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <span>⚙️</span>
+              <span>Configuración</span>
+            </button>
+            <button
+              onClick={() => {
+                setShowMenu(false)
+                handleLogout()
+              }}
+              className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors flex items-center gap-2 text-red-600 border-t border-gray-200"
+            >
+              <span>🚪</span>
+              <span>Cerrar Sesión</span>
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   )

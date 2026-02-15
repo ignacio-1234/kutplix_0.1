@@ -2,9 +2,50 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useAuth } from '@/lib/auth-context'
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const { login, register } = useAuth()
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    try {
+      await login(email, password)
+    } catch (err: any) {
+      setError(err.message || 'Error al iniciar sesión')
+      setLoading(false)
+    }
+  }
+
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    const firstName = formData.get('firstName') as string
+    const lastName = formData.get('lastName') as string
+    const companyName = formData.get('companyName') as string
+
+    try {
+      await register({ email, password, firstName, lastName, companyName })
+    } catch (err: any) {
+      setError(err.message || 'Error al crear la cuenta')
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center p-5">
@@ -28,14 +69,14 @@ export default function LoginPage() {
             <h2 className="font-display text-3xl font-semibold text-white mb-6 leading-tight">
               Centraliza tu<br />proceso creativo
             </h2>
-            
+
             <div className="flex flex-col gap-5">
               {[
                 { icon: '✓', text: 'Gestión integral de proyectos de diseño' },
                 { icon: '⚡', text: 'Asignación automatizada de diseñadores' },
                 { icon: '📊', text: 'Métricas y reportes en tiempo real' }
               ].map((feature, idx) => (
-                <div 
+                <div
                   key={idx}
                   className="flex items-center gap-4 animate-fadeInLeft"
                   style={{ animationDelay: `${(idx + 2) * 100}ms` }}
@@ -56,21 +97,19 @@ export default function LoginPage() {
           <div className="flex gap-2 mb-10 bg-gray-100 p-1.5 rounded-xl">
             <button
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-3.5 px-6 rounded-lg font-semibold transition-all ${
-                isLogin 
-                  ? 'bg-white text-primary shadow-md' 
+              className={`flex-1 py-3.5 px-6 rounded-lg font-semibold transition-all ${isLogin
+                  ? 'bg-white text-primary shadow-md'
                   : 'text-gray-600'
-              }`}
+                }`}
             >
               Iniciar Sesión
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-3.5 px-6 rounded-lg font-semibold transition-all ${
-                !isLogin 
-                  ? 'bg-white text-primary shadow-md' 
+              className={`flex-1 py-3.5 px-6 rounded-lg font-semibold transition-all ${!isLogin
+                  ? 'bg-white text-primary shadow-md'
                   : 'text-gray-600'
-              }`}
+                }`}
             >
               Crear Cuenta
             </button>
@@ -88,16 +127,24 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleLogin}>
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
+
                 <div>
                   <label className="block mb-2 text-sm font-semibold text-gray-900">
                     Correo Electrónico
                   </label>
                   <input
                     type="email"
+                    name="email"
                     placeholder="tu@email.com"
                     className="input"
                     required
+                    disabled={loading}
                   />
                 </div>
 
@@ -107,9 +154,11 @@ export default function LoginPage() {
                   </label>
                   <input
                     type="password"
+                    name="password"
                     placeholder="••••••••"
                     className="input"
                     required
+                    disabled={loading}
                   />
                 </div>
 
@@ -123,11 +172,13 @@ export default function LoginPage() {
                   </Link>
                 </div>
 
-                <Link href="/dashboard/cliente">
-                  <button type="button" className="btn-primary w-full">
-                    Iniciar Sesión
-                  </button>
-                </Link>
+                <button
+                  type="submit"
+                  className="btn-primary w-full"
+                  disabled={loading}
+                >
+                  {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                </button>
               </form>
 
               <div className="flex items-center gap-4 my-8">
@@ -159,7 +210,13 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleRegister}>
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-900">
@@ -167,9 +224,11 @@ export default function LoginPage() {
                     </label>
                     <input
                       type="text"
+                      name="firstName"
                       placeholder="Juan"
                       className="input"
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div>
@@ -178,9 +237,11 @@ export default function LoginPage() {
                     </label>
                     <input
                       type="text"
+                      name="lastName"
                       placeholder="Pérez"
                       className="input"
                       required
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -191,9 +252,11 @@ export default function LoginPage() {
                   </label>
                   <input
                     type="email"
+                    name="email"
                     placeholder="tu@email.com"
                     className="input"
                     required
+                    disabled={loading}
                   />
                 </div>
 
@@ -203,9 +266,11 @@ export default function LoginPage() {
                   </label>
                   <input
                     type="text"
+                    name="companyName"
                     placeholder="Mi Empresa"
                     className="input"
                     required
+                    disabled={loading}
                   />
                 </div>
 
@@ -215,9 +280,11 @@ export default function LoginPage() {
                   </label>
                   <input
                     type="password"
+                    name="password"
                     placeholder="Mínimo 8 caracteres"
                     className="input"
                     required
+                    disabled={loading}
                   />
                 </div>
 
@@ -228,8 +295,12 @@ export default function LoginPage() {
                   </span>
                 </label>
 
-                <button type="submit" className="btn-primary w-full">
-                  Crear Cuenta
+                <button
+                  type="submit"
+                  className="btn-primary w-full"
+                  disabled={loading}
+                >
+                  {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
                 </button>
               </form>
             </div>
