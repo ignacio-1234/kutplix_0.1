@@ -16,12 +16,9 @@ const updatePlanSchema = z.object({
     name: z.string().min(2).optional(),
     description: z.string().min(5).optional(),
     price: z.number().min(0).optional(),
-    max_reels: z.number().int().min(-1).optional(),
-    max_images: z.number().int().min(-1).optional(),
-    max_stories: z.number().int().min(-1).optional(),
-    max_carousels: z.number().int().min(-1).optional(),
-    max_revisions: z.number().int().min(-1).optional(),
-    includes_campaigns: z.boolean().optional(),
+    monthly_projects: z.number().int().min(1).nullable().optional(),
+    max_revisions: z.number().int().min(1).optional(),
+    features: z.record(z.string()).optional(),
     is_active: z.boolean().optional(),
 })
 
@@ -80,14 +77,9 @@ export async function PUT(
             }
         }
 
-        const updateData = {
-            ...validation.data,
-            updated_at: new Date().toISOString(),
-        }
-
         const { data: plan, error } = await supabase
             .from('plans')
-            .update(updateData)
+            .update(validation.data)
             .eq('id', planId)
             .select()
             .single()
@@ -148,10 +140,9 @@ export async function DELETE(
             .eq('status', 'active')
 
         if (count && count > 0) {
-            // Soft delete - solo desactivar
             const { error } = await supabase
                 .from('plans')
-                .update({ is_active: false, updated_at: new Date().toISOString() })
+                .update({ is_active: false })
                 .eq('id', planId)
 
             if (error) {
@@ -167,10 +158,9 @@ export async function DELETE(
             })
         }
 
-        // Si no hay suscripciones activas, desactivar igualmente (no borrar para mantener historial)
         const { error } = await supabase
             .from('plans')
-            .update({ is_active: false, updated_at: new Date().toISOString() })
+            .update({ is_active: false })
             .eq('id', planId)
 
         if (error) {

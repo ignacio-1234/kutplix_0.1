@@ -50,12 +50,9 @@ const createPlanSchema = z.object({
     name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
     description: z.string().min(5, 'La descripción debe tener al menos 5 caracteres'),
     price: z.number().min(0, 'El precio no puede ser negativo'),
-    max_reels: z.number().int().min(-1),
-    max_images: z.number().int().min(-1),
-    max_stories: z.number().int().min(-1),
-    max_carousels: z.number().int().min(-1),
-    max_revisions: z.number().int().min(-1),
-    includes_campaigns: z.boolean().default(false),
+    monthly_projects: z.number().int().min(1).nullable(),
+    max_revisions: z.number().int().min(1),
+    features: z.record(z.string()).default({}),
     is_active: z.boolean().default(true),
 })
 
