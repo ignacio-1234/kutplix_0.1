@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifySession } from '@/lib/session'
+import { createNotification, createReminder } from '@/lib/notifications'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,6 +72,28 @@ export async function POST(request: NextRequest) {
             .from('projects')
             .update({ status: 'in_review' })
             .eq('id', project_id)
+
+        // Auto-notify: Find the client who owns this project and notify them
+        const { data: projectFull } = await supabase
+            .from('projects')
+            .select('title, company_id, companies(user_id)')
+            .eq('id', project_id)
+            .single()
+
+        if (projectFull?.companies) {
+            const clientUserId = (projectFull.companies as any).user_id
+            if (clientUserId) {
+                await createNotification({
+                    userId: clientUserId,
+                    title: `Nueva entrega: "${projectFull.title}"`,
+                    message: `Se ha entregado la versión ${version} de tu proyecto "${projectFull.title}". Revisa y aprueba para continuar.`,
+                    type: 'info',
+                })
+
+                // Start a reminder timer for this project
+                await createReminder(clientUserId, 'project', project_id)
+            }
+        }
 
         return NextResponse.json({ delivery }, { status: 201 })
     } catch (error) {

@@ -148,3 +148,30 @@ export type Review = {
     comments: string | null
     reviewed_at: string
 }
+
+export type NotificationType = 'info' | 'warning' | 'success' | 'error'
+
+export type Notification = {
+    id: string
+    user_id: string
+    title: string
+    message: string
+    type: NotificationType
+    is_read: boolean
+    created_at: string
+}
+
+export type ReminderStatus = 'active' | 'resolved' | 'escalated'
+
+export type Reminder = {
+    id: string
+    user_id: string
+    related_type: 'grid' | 'project' | 'delivery'
+    related_id: string
+    reminder_count: number
+    last_sent_at: string | null
+    next_send_at: string
+    status: ReminderStatus
+    created_at: string
+    updated_at: string
+}
