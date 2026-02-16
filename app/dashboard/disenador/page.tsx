@@ -1,84 +1,97 @@
 'use client'
 
 import Sidebar from '@/components/Sidebar'
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/lib/auth-context'
+
+type Project = {
+    id: string
+    title: string
+    description: string
+    client_name: string
+    deadline: string
+    content_type: string
+    priority: string
+    status: string
+    progress: number // calculated or mocked for now
+}
+
+const priorityStyles: Record<string, string> = {
+    urgent: 'bg-red-50 text-danger',
+    high: 'bg-orange-50 text-warning',
+    medium: 'bg-blue-50 text-primary',
+    low: 'bg-green-50 text-success',
+}
+
+const taskBorderStyles: Record<string, string> = {
+    urgent: 'border-danger bg-red-50/30',
+    high: 'border-orange-200',
+    medium: 'border-blue-200',
+    low: 'border-green-200',
+}
+
+const contentIcons: Record<string, string> = {
+    static: '🖼️',
+    reel: '🎬',
+    story: '📱',
+    carousel: '📊',
+}
 
 export default function DisenadorDashboard() {
-    const urgentTasks = [
-        {
-            id: 1,
-            title: 'Reel Promocional - Servicios',
-            client: 'Clínica Dental SmileCenter',
-            deadline: 'Hoy, 6:00 PM',
-            type: 'Reel',
-            typeIcon: '🎬',
-            priority: 'urgent' as const,
-            priorityText: 'Urgente',
-            progress: 70,
-        },
-        {
-            id: 2,
-            title: 'Campaña Redes Sociales – Febrero',
-            client: 'Spa Wellness & Beauty',
-            deadline: '16 Feb',
-            type: 'Carrusel',
-            typeIcon: '📱',
-            priority: 'high' as const,
-            priorityText: 'Alta',
-            progress: 45,
-        },
-    ]
+    const { user } = useAuth()
+    const [urgentProjects, setUrgentProjects] = useState<Project[]>([])
+    const [inProgressProjects, setInProgressProjects] = useState<Project[]>([])
+    const [loading, setLoading] = useState(true)
 
-    const inProgressTasks = [
-        {
-            id: 3,
-            title: 'Imagen Estática – Promoción Marzo',
-            client: 'Salón de Belleza Glamour',
-            deadline: '20 Feb',
-            type: 'Imagen',
-            typeIcon: '🖼️',
-            priority: 'medium' as const,
-            priorityText: 'Media',
-            progress: 30,
-        },
-        {
-            id: 4,
-            title: 'Historia Instagram – Tips',
-            client: 'Centro Médico Integral',
-            deadline: '22 Feb',
-            type: 'Historia',
-            typeIcon: '📱',
-            priority: 'medium' as const,
-            priorityText: 'Media',
-            progress: 15,
-        },
-    ]
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                // Fetch projects assigned to me
+                // We'll fetch all and filter client-side for now or use specific API params if available
+                const res = await fetch('/api/projects?limit=50&sortOrder=asc&sortBy=deadline')
+                if (res.ok) {
+                    const data = await res.json()
+                    const allProjects = data.projects || []
 
-    const activities = [
-        {
-            id: 1,
-            icon: '✓',
-            iconStyle: 'bg-green-100 text-success',
-            text: 'Proyecto aprobado:',
-            detail: '"Banner Promocional Verano"',
-            time: 'Hace 2 horas',
-        },
-        {
-            id: 2,
-            icon: '💬',
-            iconStyle: 'bg-blue-100 text-primary',
-            text: 'Nuevo comentario',
-            detail: 'en "Campaña Redes Febrero"',
-            time: 'Hace 4 horas',
-        },
-        {
-            id: 3,
-            icon: '🔄',
-            iconStyle: 'bg-orange-100 text-warning',
-            text: 'Revisión solicitada:',
-            detail: '"Post Instagram Testimonios"',
-            time: 'Ayer, 3:45 PM',
-        },
-    ]
+                    // Filter Urgent: High/Urgent priority AND deadline soon (e.g., within 3 days) OR status 'changes_requested'
+                    // For simplicity, let's just use priority for now
+                    const urgent = allProjects.filter((p: any) =>
+                        (p.priority === 'urgent' || p.priority === 'high') && p.status !== 'approved' && p.status !== 'cancelled'
+                    )
+
+                    // Filter In Progress: Others that are not completed
+                    const inProgress = allProjects.filter((p: any) =>
+                        (p.priority !== 'urgent' && p.priority !== 'high') && p.status !== 'approved' && p.status !== 'cancelled'
+                    )
+
+                    setUrgentProjects(urgent)
+                    setInProgressProjects(inProgress)
+                }
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchDashboardData()
+    }, [])
+
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return '—'
+        return new Date(dateStr).toLocaleDateString('es-ES', {
+            day: 'numeric',
+            month: 'short',
+        })
+    }
+
+    // Mock data for calendar/events as placeholders until we have a real calendar API
+    const upcomingEvents = urgentProjects.slice(0, 3).map(p => ({
+        time: formatDate(p.deadline),
+        title: p.title,
+        color: p.priority === 'urgent' ? 'border-l-danger' : 'border-l-warning'
+    }))
 
     const calendarDays = [
         // Previous month (inactive)
@@ -87,7 +100,7 @@ export default function DisenadorDashboard() {
         { day: 29, inactive: true },
         { day: 30, inactive: true },
         { day: 31, inactive: true },
-        // February
+        // February (Just a placeholder visual)
         { day: 1 }, { day: 2 }, { day: 3 }, { day: 4 }, { day: 5 },
         { day: 6 }, { day: 7 }, { day: 8 }, { day: 9 }, { day: 10 },
         { day: 11 }, { day: 12 }, { day: 13 },
@@ -109,30 +122,12 @@ export default function DisenadorDashboard() {
         { day: 29 },
     ]
 
-    const upcomingEvents = [
-        { time: 'Hoy, 6:00 PM', title: 'Reel Promocional – SmileCenter', color: 'border-l-primary' },
-        { time: '16 Feb, 5:00 PM', title: 'Campaña Redes – Spa Wellness', color: 'border-l-warning' },
-        { time: '18 Feb, 3:00 PM', title: 'Banner Web – Centro Médico', color: 'border-l-success' },
-    ]
-
-    const priorityStyles: Record<string, string> = {
-        urgent: 'bg-red-50 text-danger',
-        high: 'bg-orange-50 text-warning',
-        medium: 'bg-blue-50 text-primary',
-    }
-
-    const taskBorderStyles: Record<string, string> = {
-        urgent: 'border-danger bg-red-50/30',
-        high: 'border-gray-200',
-        medium: 'border-gray-200',
-    }
-
     return (
         <div className="flex min-h-screen">
             <Sidebar
                 role="diseñador"
-                userName="María González"
-                userRole="Diseñadora Senior"
+                userName={user ? `${user.firstName} ${user.lastName}` : 'Diseñador'}
+                userRole="Diseñador Senior"
             />
 
             <main className="flex-1 ml-72">
@@ -141,10 +136,10 @@ export default function DisenadorDashboard() {
                     <div className="flex items-center justify-between">
                         <div>
                             <h2 className="font-display text-2xl font-semibold text-gray-900">
-                                Hola, María 👋
+                                Hola, {user?.firstName || 'Diseñador'} 👋
                             </h2>
                             <p className="text-sm text-gray-600 mt-1">
-                                Tienes 5 proyectos pendientes esta semana
+                                Tienes {urgentProjects.length} proyectos urgentes
                             </p>
                         </div>
 
@@ -152,7 +147,7 @@ export default function DisenadorDashboard() {
                             <button className="relative w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center hover:bg-gray-200 transition-all">
                                 <span className="text-lg">🔔</span>
                                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-danger rounded-full text-white text-xs flex items-center justify-center font-semibold">
-                                    5
+                                    {urgentProjects.length}
                                 </span>
                             </button>
                         </div>
@@ -165,15 +160,15 @@ export default function DisenadorDashboard() {
                     <div className="grid grid-cols-3 gap-5 mb-8">
                         <div className="card hover:shadow-lg transition-all">
                             <div className="text-sm text-gray-500 mb-2">Proyectos Activos</div>
-                            <div className="font-display text-3xl font-bold text-primary">5</div>
+                            <div className="font-display text-3xl font-bold text-primary">{urgentProjects.length + inProgressProjects.length}</div>
                         </div>
                         <div className="card hover:shadow-lg transition-all">
                             <div className="text-sm text-gray-500 mb-2">Completados (Mes)</div>
-                            <div className="font-display text-3xl font-bold text-success">18</div>
+                            <div className="font-display text-3xl font-bold text-success">--</div>
                         </div>
                         <div className="card hover:shadow-lg transition-all">
                             <div className="text-sm text-gray-500 mb-2">Tiempo Promedio</div>
-                            <div className="font-display text-3xl font-bold text-warning">2.3d</div>
+                            <div className="font-display text-3xl font-bold text-warning">--</div>
                         </div>
                     </div>
 
@@ -187,51 +182,46 @@ export default function DisenadorDashboard() {
                                     <h3 className="font-display text-lg font-semibold">
                                         🔥 Tareas Urgentes
                                     </h3>
-                                    <a href="#" className="text-primary text-sm font-medium hover:underline">
-                                        Ver todas →
-                                    </a>
                                 </div>
 
                                 <div className="space-y-3">
-                                    {urgentTasks.map((task) => (
-                                        <div
-                                            key={task.id}
-                                            className={`p-4 rounded-xl border-2 transition-all cursor-pointer hover:shadow-md ${taskBorderStyles[task.priority]}`}
-                                        >
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <div className="font-semibold text-gray-900 text-[15px]">
-                                                        {task.title}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">{task.client}</div>
-                                                </div>
-                                                <span
-                                                    className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wide ${priorityStyles[task.priority]}`}
+                                    {loading ? (
+                                        <p>Cargando...</p>
+                                    ) : urgentProjects.length === 0 ? (
+                                        <p className="text-gray-500 text-sm">No hay tareas urgentes.</p>
+                                    ) : (
+                                        urgentProjects.map((task) => (
+                                            <Link href={`/dashboard/disenador/proyectos/${task.id}`} key={task.id}>
+                                                <div
+                                                    className={`p-4 rounded-xl border-2 transition-all cursor-pointer hover:shadow-md mb-3 ${taskBorderStyles[task.priority] || 'border-gray-200'}`}
                                                 >
-                                                    {task.priorityText}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-4 text-xs text-gray-500">
-                                                    <span className="flex items-center gap-1">
-                                                        📅 Entrega: {task.deadline}
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        {task.typeIcon} {task.type}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
-                                                        <div
-                                                            className="h-full bg-success rounded-full transition-all"
-                                                            style={{ width: `${task.progress}%` }}
-                                                        />
+                                                    <div className="flex items-start justify-between mb-3">
+                                                        <div>
+                                                            <div className="font-semibold text-gray-900 text-[15px]">
+                                                                {task.title}
+                                                            </div>
+                                                            <div className="text-sm text-gray-500">{task.client_name || 'Cliente'}</div>
+                                                        </div>
+                                                        <span
+                                                            className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wide ${priorityStyles[task.priority] || 'bg-gray-100'}`}
+                                                        >
+                                                            {task.priority || 'Normal'}
+                                                        </span>
                                                     </div>
-                                                    <span className="text-xs text-gray-500">{task.progress}%</span>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                                                            <span className="flex items-center gap-1">
+                                                                📅 Entrega: {formatDate(task.deadline)}
+                                                            </span>
+                                                            <span className="flex items-center gap-1">
+                                                                {contentIcons[task.content_type] || '📄'} {task.content_type}
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    ))}
+                                            </Link>
+                                        ))
+                                    )}
                                 </div>
                             </div>
 
@@ -244,72 +234,43 @@ export default function DisenadorDashboard() {
                                 </div>
 
                                 <div className="space-y-3">
-                                    {inProgressTasks.map((task) => (
-                                        <div
-                                            key={task.id}
-                                            className="p-4 rounded-xl border-2 border-gray-200 transition-all cursor-pointer hover:border-primary hover:shadow-md"
-                                        >
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div>
-                                                    <div className="font-semibold text-gray-900 text-[15px]">
-                                                        {task.title}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">{task.client}</div>
-                                                </div>
-                                                <span
-                                                    className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wide ${priorityStyles[task.priority]}`}
+                                    {loading ? (
+                                        <p>Cargando...</p>
+                                    ) : inProgressProjects.length === 0 ? (
+                                        <p className="text-gray-500 text-sm">No hay tareas en progreso.</p>
+                                    ) : (
+                                        inProgressProjects.map((task) => (
+                                            <Link href={`/dashboard/disenador/proyectos/${task.id}`} key={task.id}>
+                                                <div
+                                                    className="p-4 rounded-xl border-2 border-gray-200 transition-all cursor-pointer hover:border-primary hover:shadow-md mb-3"
                                                 >
-                                                    {task.priorityText}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-4 text-xs text-gray-500">
-                                                    <span className="flex items-center gap-1">
-                                                        📅 Entrega: {task.deadline}
-                                                    </span>
-                                                    <span className="flex items-center gap-1">
-                                                        {task.typeIcon} {task.type}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
-                                                        <div
-                                                            className="h-full bg-success rounded-full transition-all"
-                                                            style={{ width: `${task.progress}%` }}
-                                                        />
+                                                    <div className="flex items-start justify-between mb-3">
+                                                        <div>
+                                                            <div className="font-semibold text-gray-900 text-[15px]">
+                                                                {task.title}
+                                                            </div>
+                                                            <div className="text-sm text-gray-500">{task.client_name || 'Cliente'}</div>
+                                                        </div>
+                                                        <span
+                                                            className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wide ${priorityStyles[task.priority] || 'bg-gray-100'}`}
+                                                        >
+                                                            {task.priority || 'Normal'}
+                                                        </span>
                                                     </div>
-                                                    <span className="text-xs text-gray-500">{task.progress}%</span>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                                                            <span className="flex items-center gap-1">
+                                                                📅 Entrega: {formatDate(task.deadline)}
+                                                            </span>
+                                                            <span className="flex items-center gap-1">
+                                                                {contentIcons[task.content_type] || '📄'} {task.content_type}
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Activity Feed */}
-                            <div className="card">
-                                <div className="mb-5">
-                                    <h3 className="font-display text-lg font-semibold">
-                                        📊 Actividad Reciente
-                                    </h3>
-                                </div>
-
-                                <div className="divide-y divide-gray-200">
-                                    {activities.map((activity) => (
-                                        <div key={activity.id} className="flex gap-4 py-4 first:pt-0 last:pb-0">
-                                            <div
-                                                className={`w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0 ${activity.iconStyle}`}
-                                            >
-                                                {activity.icon}
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="text-sm text-gray-900">
-                                                    <strong>{activity.text}</strong> {activity.detail}
-                                                </div>
-                                                <div className="text-xs text-gray-500 mt-1">{activity.time}</div>
-                                            </div>
-                                        </div>
-                                    ))}
+                                            </Link>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -319,15 +280,7 @@ export default function DisenadorDashboard() {
                             <div className="card sticky top-24">
                                 {/* Calendar Header */}
                                 <div className="flex items-center justify-between mb-5">
-                                    <h3 className="font-display text-base font-semibold">Febrero 2026</h3>
-                                    <div className="flex gap-2">
-                                        <button className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center hover:bg-gray-200 transition-all text-sm">
-                                            ‹
-                                        </button>
-                                        <button className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center hover:bg-gray-200 transition-all text-sm">
-                                            ›
-                                        </button>
-                                    </div>
+                                    <h3 className="font-display text-base font-semibold">Calendario</h3>
                                 </div>
 
                                 {/* Calendar Grid */}
@@ -360,10 +313,10 @@ export default function DisenadorDashboard() {
                                 {/* Upcoming Events */}
                                 <div className="pt-5 border-t border-gray-200">
                                     <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                                        Próximas Entregas
+                                        Próximas Entregas (Urgentes)
                                     </h4>
                                     <div className="space-y-2">
-                                        {upcomingEvents.map((event, i) => (
+                                        {upcomingEvents.length === 0 ? <p className="text-xs text-gray-500">No hay entregas próximas.</p> : upcomingEvents.map((event, i) => (
                                             <div
                                                 key={i}
                                                 className={`p-3 bg-gray-50 rounded-lg border-l-[3px] ${event.color}`}

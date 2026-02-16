@@ -106,8 +106,8 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         const { project_id, file_name, file_url, file_type, file_size, category } = body
 
-        if (!project_id || !file_name || !file_url) {
-            return NextResponse.json({ error: 'project_id, file_name y file_url son requeridos' }, { status: 400 })
+        if (!file_name || !file_url) {
+            return NextResponse.json({ error: 'file_name y file_url son requeridos' }, { status: 400 })
         }
 
         const validCategories = ['input', 'output', 'reference']
@@ -121,10 +121,28 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 400 })
         }
 
+        let targetProjectId = project_id
+
+        // If no project_id provided, find the most recent one
+        if (!targetProjectId) {
+            const { data: latestProject } = await supabase
+                .from('projects')
+                .select('id')
+                .eq('company_id', company.id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single()
+
+            if (!latestProject) {
+                return NextResponse.json({ error: 'No tienes proyectos activos para asociar recursos.' }, { status: 400 })
+            }
+            targetProjectId = latestProject.id
+        }
+
         const { data: project } = await supabase
             .from('projects')
             .select('id')
-            .eq('id', project_id)
+            .eq('id', targetProjectId)
             .eq('company_id', company.id)
             .single()
 
@@ -135,7 +153,7 @@ export async function POST(request: NextRequest) {
         const { data: resource, error } = await supabase
             .from('resources')
             .insert({
-                project_id,
+                project_id: targetProjectId,
                 uploaded_by: session.userId,
                 file_name,
                 file_url,

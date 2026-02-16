@@ -17,8 +17,30 @@ export async function GET(
 
         const { id } = params
 
-        // Use projects_full view for enriched data
-        let query = supabase.from('projects_full').select('*').eq('id', id)
+        // Build query using joins instead of view
+        let query = supabase
+            .from('projects')
+            .select(`
+                *,
+                companies (
+                    name,
+                    logo_url,
+                    users (
+                        email,
+                        first_name,
+                        last_name
+                    )
+                ),
+                designers (
+                    id,
+                    rating,
+                    users (
+                        first_name,
+                        last_name
+                    )
+                )
+            `)
+            .eq('id', id)
 
         // Non-admin users: verify access
         if (session.role === 'client') {
@@ -41,11 +63,26 @@ export async function GET(
             }
         }
 
-        const { data: project, error } = await query.single()
+        const { data: rawProject, error } = await query.single()
 
-        if (error || !project) {
+        if (error || !rawProject) {
             return NextResponse.json({ error: 'Proyecto no encontrado' }, { status: 404 })
         }
+
+        // Transform/Flatten data
+        const project: any = {
+            ...rawProject,
+            company_name: rawProject.companies?.name,
+            company_logo: rawProject.companies?.logo_url,
+            client_email: rawProject.companies?.users?.email,
+            client_name: rawProject.companies?.users ? `${rawProject.companies.users.first_name} ${rawProject.companies.users.last_name}` : null,
+            designer_name: rawProject.designers?.users ? `${rawProject.designers.users.first_name} ${rawProject.designers.users.last_name}` : null,
+            designer_rating: rawProject.designers?.rating,
+        }
+
+        // Remove nested objects
+        delete project.companies
+        delete project.designers
 
         // Get deliveries for this project
         const { data: deliveries } = await supabase

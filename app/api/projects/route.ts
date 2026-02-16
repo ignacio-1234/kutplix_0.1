@@ -42,8 +42,29 @@ export async function GET(request: NextRequest) {
 
         const offset = (page - 1) * limit
 
-        // Use the projects_full view for enriched data
-        let query = supabase.from('projects_full').select('*', { count: 'exact' })
+        // Build query using joins
+        let query = supabase
+            .from('projects')
+            .select(`
+                *,
+                companies (
+                    name,
+                    logo_url,
+                    users (
+                        email,
+                        first_name,
+                        last_name
+                    )
+                ),
+                designers (
+                    id,
+                    rating,
+                    users (
+                        first_name,
+                        last_name
+                    )
+                )
+            `, { count: 'exact' })
 
         // Filter by user role
         if (session.role === 'client') {
@@ -59,14 +80,13 @@ export async function GET(request: NextRequest) {
             }
             query = query.eq('designer_id', designer.id)
         }
-        // admin sees all
 
         // Status filter
         if (status !== 'all') {
             query = query.eq('status', status)
         }
 
-        // Search filter
+        // Search filter (Title only for now)
         if (search) {
             query = query.ilike('title', `%${search}%`)
         }
@@ -78,15 +98,29 @@ export async function GET(request: NextRequest) {
         // Pagination
         query = query.range(offset, offset + limit - 1)
 
-        const { data: projects, error, count } = await query
+        const { data: rawProjects, error, count } = await query
 
         if (error) {
             console.error('Error fetching projects:', error)
             return NextResponse.json({ error: 'Error al cargar proyectos' }, { status: 500 })
         }
 
+        // Transform/Flatten data to match expected frontend format
+        const projects = (rawProjects || []).map((p: any) => ({
+            ...p,
+            company_name: p.companies?.name,
+            company_logo: p.companies?.logo_url,
+            client_email: p.companies?.users?.email,
+            client_name: p.companies?.users ? `${p.companies.users.first_name} ${p.companies.users.last_name}` : null,
+            designer_name: p.designers?.users ? `${p.designers.users.first_name} ${p.designers.users.last_name}` : null,
+            designer_rating: p.designers?.rating,
+            // Remove nested objects to keep response clean
+            companies: undefined,
+            designers: undefined
+        }))
+
         return NextResponse.json({
-            projects: projects || [],
+            projects,
             pagination: {
                 page,
                 limit,
@@ -108,13 +142,26 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
         }
 
-        const company = await getCompanyForUser(session.userId)
-        if (!company) {
-            return NextResponse.json({ error: 'No se encontró la empresa asociada' }, { status: 400 })
-        }
-
         const body = await request.json()
-        const { title, description, content_type, priority, deadline } = body
+        const { title, description, content_type, priority, deadline, companyId, designer_id } = body
+
+        let targetCompanyId = ''
+
+        // Logic for determining Company ID based on role
+        if (session.role === 'client') {
+            const company = await getCompanyForUser(session.userId)
+            if (!company) {
+                return NextResponse.json({ error: 'No se encontró la empresa asociada' }, { status: 400 })
+            }
+            targetCompanyId = company.id
+        } else if (session.role === 'admin') {
+            if (!companyId) {
+                return NextResponse.json({ error: 'ID de empresa requerido para admin' }, { status: 400 })
+            }
+            targetCompanyId = companyId
+        } else {
+            return NextResponse.json({ error: 'Rol no autorizado para crear proyectos' }, { status: 403 })
+        }
 
         if (!title || !description || !content_type || !deadline) {
             return NextResponse.json(
@@ -134,8 +181,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Prioridad inválida' }, { status: 400 })
         }
 
-        const projectData = {
-            company_id: company.id,
+        const projectData: any = {
+            company_id: targetCompanyId,
             title,
             description,
             content_type,
@@ -143,6 +190,13 @@ export async function POST(request: NextRequest) {
             status: 'pending',
             deadline,
             revision_count: 0,
+        }
+
+        // Allow admin to assign designer immediately
+        if (session.role === 'admin' && designer_id) {
+            projectData.designer_id = designer_id
+            // If assigned, maybe status should be 'in_progress' or remain 'pending'? 
+            // 'pending' is fine, let designer start it.
         }
 
         const { data: project, error } = await supabase
