@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifySession } from '@/lib/session'
+import { createNotification, resolveReminder } from '@/lib/notifications'
 
 export const dynamic = 'force-dynamic'
 
@@ -196,6 +197,62 @@ export async function PUT(
         if (error) {
             console.error('Error updating project:', error)
             return NextResponse.json({ error: 'Error al actualizar el proyecto' }, { status: 500 })
+        }
+
+        // Auto-notifications on status changes
+        if (body.action === 'approve' || body.action === 'request_changes' || body.action === 'cancel') {
+            // Resolve any active reminders for this project (client responded)
+            await resolveReminder('project', id)
+
+            // Notify the designer
+            if (existing.designer_id) {
+                const { data: designerRecord } = await supabase
+                    .from('designers')
+                    .select('user_id')
+                    .eq('id', existing.designer_id)
+                    .single()
+
+                if (designerRecord) {
+                    if (body.action === 'approve') {
+                        await createNotification({
+                            userId: designerRecord.user_id,
+                            title: `Proyecto aprobado: "${existing.title}"`,
+                            message: `El cliente ha aprobado el proyecto "${existing.title}".`,
+                            type: 'success',
+                        })
+                    } else if (body.action === 'request_changes') {
+                        await createNotification({
+                            userId: designerRecord.user_id,
+                            title: `Cambios solicitados: "${existing.title}"`,
+                            message: `El cliente ha solicitado cambios en "${existing.title}". Revisión ${existing.revision_count + 1}.${body.comments ? ` Comentario: ${body.comments}` : ''}`,
+                            type: 'warning',
+                        })
+                    }
+                }
+            }
+
+            // Notify admins
+            const { data: admins } = await supabase
+                .from('users')
+                .select('id')
+                .eq('role', 'admin')
+                .eq('is_active', true)
+
+            if (admins) {
+                const actionLabels: Record<string, string> = {
+                    approve: 'aprobado',
+                    request_changes: 'solicitó cambios en',
+                    cancel: 'cancelado',
+                }
+                for (const admin of admins) {
+                    await createNotification({
+                        userId: admin.id,
+                        title: `Proyecto ${actionLabels[body.action]}: "${existing.title}"`,
+                        message: `El cliente ha ${actionLabels[body.action]} el proyecto "${existing.title}".`,
+                        type: body.action === 'approve' ? 'success' : body.action === 'cancel' ? 'error' : 'warning',
+                    })
+                }
+            }
         }
 
         return NextResponse.json({ project })

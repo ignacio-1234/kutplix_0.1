@@ -234,9 +234,10 @@ export default function MisProyectosPage() {
                             </div>
                         ) : (
                             projects.map((project) => (
-                                <div
+                                <Link
                                     key={project.id}
-                                    className="card hover:shadow-lg transition-all cursor-pointer border-2 border-transparent hover:border-primary/30"
+                                    href={`/dashboard/cliente/proyectos/${project.id}`}
+                                    className="card hover:shadow-lg transition-all cursor-pointer border-2 border-transparent hover:border-primary/30 block"
                                 >
                                     <div className="flex items-start gap-5">
                                         <div className="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center text-3xl flex-shrink-0">
@@ -278,7 +279,7 @@ export default function MisProyectosPage() {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             ))
                         )}
                     </div>

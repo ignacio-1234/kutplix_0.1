@@ -1,6 +1,7 @@
 'use client'
 
 import Sidebar from '@/components/Sidebar'
+import NotificationBell from '@/components/NotificationBell'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
@@ -155,14 +156,7 @@ export default function ClienteDashboard() {
                 </span>
               </div>
 
-              <button className="relative w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center hover:bg-gray-200 transition-all">
-                <span className="text-lg">🔔</span>
-                {stats && stats.inReviewProjects > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center font-semibold">
-                    {stats.inReviewProjects}
-                  </span>
-                )}
-              </button>
+              <NotificationBell />
             </div>
           </div>
         </header>
@@ -320,8 +314,9 @@ export default function ClienteDashboard() {
                 </div>
               ) : (
                 filteredProjects.map((project) => (
-                  <div
+                  <Link
                     key={project.id}
+                    href={`/dashboard/cliente/proyectos/${project.id}`}
                     className="grid grid-cols-[auto,1fr,auto,auto] gap-5 items-center p-5 border-2 border-gray-200 rounded-xl hover:border-primary transition-all cursor-pointer"
                   >
                     <div className="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center text-3xl">
@@ -350,14 +345,11 @@ export default function ClienteDashboard() {
                     </span>
 
                     <div className="flex gap-2">
-                      <button className="w-9 h-9 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50">
+                      <span className="w-9 h-9 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50">
                         👁️
-                      </button>
-                      <button className="w-9 h-9 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50">
-                        💬
-                      </button>
+                      </span>
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>

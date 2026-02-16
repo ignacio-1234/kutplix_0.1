@@ -21,6 +21,7 @@ interface SidebarProps {
 const navItemsByRole: Record<string, NavItem[]> = {
   cliente: [
     { icon: '🏠', label: 'Inicio', href: '/dashboard/cliente' },
+    { icon: '✅', label: 'Aprobaciones', href: '/dashboard/cliente/aprobaciones' },
     { icon: '📁', label: 'Mis Proyectos', href: '/dashboard/cliente/proyectos' },
     { icon: '➕', label: 'Nueva Solicitud', href: '/dashboard/cliente/nueva-solicitud' },
     { icon: '💎', label: 'Mi Plan', href: '/dashboard/cliente/plan' },
