@@ -109,7 +109,7 @@ export default function AdminPlansEditor() {
                             <div>
                                 <label className="block text-xs text-gray-500 uppercase font-semibold mb-1">Descripción</label>
                                 <textarea
-                                    value={plan.description}
+                                    value={plan.description ?? ''}
                                     onChange={(e) => handleChange(plan.id, 'description', e.target.value)}
                                     className="w-full text-sm text-gray-500 bg-neutral-light border border-transparent focus:border-primary rounded px-2 py-1 h-20 resize-none"
                                 />
@@ -134,7 +134,7 @@ export default function AdminPlansEditor() {
                                     <label className="block text-xs text-gray-500 uppercase font-semibold mb-1">Proyectos Mensuales</label>
                                     <input
                                         type="number"
-                                        value={plan.monthly_projects}
+                                        value={plan.monthly_projects ?? ''}
                                         onChange={(e) => handleChange(plan.id, 'monthly_projects', Number(e.target.value))}
                                         className="w-full bg-neutral-light border border-gray-200 rounded px-2 py-1"
                                     />
@@ -143,7 +143,7 @@ export default function AdminPlansEditor() {
                                     <label className="block text-xs text-gray-500 uppercase font-semibold mb-1">Revisiones</label>
                                     <input
                                         type="number"
-                                        value={plan.max_revisions}
+                                        value={plan.max_revisions ?? ''}
                                         onChange={(e) => handleChange(plan.id, 'max_revisions', Number(e.target.value))}
                                         className="w-full bg-neutral-light border border-gray-200 rounded px-2 py-1"
                                     />
