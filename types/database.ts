@@ -42,6 +42,8 @@ export type AuthUser = {
     firstName: string
     lastName: string
     role: 'admin' | 'client' | 'designer'
+    avatarUrl?: string | null
+    isActive?: boolean
 }
 
 export type LoginCredentials = {
