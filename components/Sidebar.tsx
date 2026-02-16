@@ -22,6 +22,7 @@ const navItemsByRole: Record<string, NavItem[]> = {
   cliente: [
     { icon: '🏠', label: 'Inicio', href: '/dashboard/cliente' },
     { icon: '✅', label: 'Aprobaciones', href: '/dashboard/cliente/aprobaciones' },
+    { icon: '📅', label: 'Grilla Mensual', href: '/dashboard/cliente/grilla' },
     { icon: '📁', label: 'Mis Proyectos', href: '/dashboard/cliente/proyectos' },
     { icon: '➕', label: 'Nueva Solicitud', href: '/dashboard/cliente/nueva-solicitud' },
     { icon: '💎', label: 'Mi Plan', href: '/dashboard/cliente/plan' },
@@ -40,6 +41,7 @@ const navItemsByRole: Record<string, NavItem[]> = {
   ],
   admin: [
     { icon: '📊', label: 'Dashboard', href: '/dashboard/admin' },
+    { icon: '📅', label: 'Grillas Mensuales', href: '/dashboard/admin/grillas' },
     { icon: '📁', label: 'Todos los Proyectos', href: '/dashboard/admin/proyectos' },
     { icon: '👥', label: 'Gestión de Usuarios', href: '/dashboard/admin/usuarios' },
     { icon: '🎨', label: 'Diseñadores', href: '/dashboard/admin/disenadores' },
@@ -91,7 +93,7 @@ export default function Sidebar({ role, userName, userRole, userAvatar }: Sideba
       {/* Navigation */}
       <nav className="flex-1 p-4 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.href
+          const isActive = pathname === item.href || (item.href !== '/dashboard/cliente' && item.href !== '/dashboard/disenador' && item.href !== '/dashboard/admin' && pathname.startsWith(item.href + '/'))
 
           return (
             <Link

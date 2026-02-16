@@ -161,6 +161,50 @@ export type Notification = {
     created_at: string
 }
 
+export type GridStatus = 'draft' | 'sent' | 'approved' | 'changes_requested'
+export type GridItemStatus = 'planned' | 'in_progress' | 'completed'
+
+export type Grid = {
+    id: string
+    company_id: string
+    month: number
+    year: number
+    status: GridStatus
+    created_by: string
+    sent_at: string | null
+    approved_at: string | null
+    created_at: string
+    updated_at: string
+    // Joined
+    company_name?: string
+    items?: GridItem[]
+    comments?: GridComment[]
+}
+
+export type GridItem = {
+    id: string
+    grid_id: string
+    date: string
+    content_type: ContentType
+    topic: string
+    description: string | null
+    status: GridItemStatus
+    project_id: string | null
+    created_at: string
+    updated_at: string
+}
+
+export type GridComment = {
+    id: string
+    grid_id: string
+    user_id: string
+    message: string
+    created_at: string
+    // Joined
+    user_name?: string
+    user_role?: string
+}
+
 export type ReminderStatus = 'active' | 'resolved' | 'escalated'
 
 export type Reminder = {
