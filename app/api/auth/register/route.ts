@@ -4,6 +4,8 @@ import { createSession } from '@/lib/session'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+
 const registerSchema = z.object({
     email: z.string().email('Email inválido'),
     password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),

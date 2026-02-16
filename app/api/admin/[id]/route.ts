@@ -4,6 +4,8 @@ import { verifySession } from '@/lib/session'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+
 // Verificar que el usuario es admin
 async function verifyAdmin() {
     const session = await verifySession()

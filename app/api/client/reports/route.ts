@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifySession } from '@/lib/session'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/client/reports — Computed report data for the client dashboard
 export async function GET(request: NextRequest) {
     try {

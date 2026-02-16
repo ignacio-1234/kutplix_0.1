@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifySession } from '@/lib/session'
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/client/resources/upload — Upload a file to Supabase Storage and create resource record
 export async function POST(request: NextRequest) {
     try {

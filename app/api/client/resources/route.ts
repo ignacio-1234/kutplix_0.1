@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifySession } from '@/lib/session'
 
+export const dynamic = 'force-dynamic'
+
 // Helper: Get company for client user
 async function getCompanyForUser(userId: string) {
     const { data } = await supabase

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { verifySession } from '@/lib/session'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/projects/[id] — Get single project with full details
 export async function GET(
     request: NextRequest,
