@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+// GET /api/plans — List all active plans
+export async function GET() {
+    try {
+        const { data: plans, error } = await supabase
+            .from('plans')
+            .select('*')
+            .eq('is_active', true)
+            .order('price', { ascending: true })
+
+        if (error) {
+            console.error('Error fetching plans:', error)
+            return NextResponse.json({ error: 'Error al cargar planes' }, { status: 500 })
+        }
+
+        return NextResponse.json({ plans: plans || [] })
+    } catch (error) {
+        console.error('Plans GET error:', error)
+        return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    }
+}
+
 export async function PUT(request: NextRequest) {
     try {
         const body = await request.json()
